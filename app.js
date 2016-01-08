@@ -39,7 +39,12 @@ function filterFirstTenStops(stopArray) {
 
     var i = 0;
     for (i; i < 10; i++) {
-        responseArray[i] = stopArray[i];
+        if (i > stopArray.length) {
+            return responseArray
+        }
+        else {
+            responseArray[i] = stopArray[i];
+        }
     }
 
     return responseArray;
