@@ -13,16 +13,16 @@ var redisClient = redis.createClient(6379);
 // server
 var app = express();
 
-app.use(bodyParser.json());	// used for parsing application/json
-app.use(bodyParser.urlencoded({ extended: true })); 	// for parsing application/x-www-form-unlencoded
+app.use(bodyParser.json()); // used for parsing application/json
+app.use(bodyParser.urlencoded({ extended: true }));     // for parsing application/x-www-form-unlencoded
 app.use(staticServe('_domain', {'index': ['index.html', 'index.html']}));
 app.set('trust proxy', true);
 app.set('trust proxy', 'loopback');
 
 var ssl = {
-	key: fs.readFileSync('/etc/letsencrypt/live/findmybusnj.com/privkey.pem'),
-	cert: fs.readFileSync('/etc/letsencrypt/live/findmybusnj.com/fullchain.pem'),
-	ca: fs.readFileSync('/etc/letsencrypt/live/findmybusnj.com/chain.pem')
+    key: fs.readFileSync('/etc/letsencrypt/live/findmybusnj.com/privkey.pem'),
+    cert: fs.readFileSync('/etc/letsencrypt/live/findmybusnj.com/fullchain.pem'),
+    ca: fs.readFileSync('/etc/letsencrypt/live/findmybusnj.com/chain.pem')
 }
 
 http.createServer(app).listen(process.env.PORT || 8000);
@@ -40,7 +40,7 @@ function filterFirstTenStops(stopArray) {
     var i = 0;
     for (i; i < 10; i++) {
         if (i > stopArray.length) {
-            return responseArray
+            return responseArray;
         }
         else {
             responseArray[i] = stopArray[i];
@@ -79,9 +79,25 @@ app.post('/rest/stop', function (req, res) {
         if (!error && response.statusCode == 200) {
             var busesObject = xml2json.toJson(body, options);
             var busesArray = busesObject.stop.pre;  // if NJT changes their xml format, this will break
-            var filteredArray = filterFirstTenStops(busesArray);
-            redisClient.set(stop, JSON.stringify(filteredArray));   // put the most recent response in the DB incase we can't reach NJT
-            res.json(filteredArray);
+            var noPrediction = busesObject.stop.noPredictionMessage;
+        
+            if (noPrediction) {
+                // We have no current predictions
+                redisClient.set(stop, "No arrival times");
+                res.json(noPrediction);
+                return;
+            }
+
+            if (busesArray instanceof Array) {
+                var filteredArray = filterFirstTenStops(busesArray);
+                redisClient.set(stop, JSON.stringify(filteredArray));   // put the most recent response in the DB incase we can't reach NJT
+                res.json(filteredArray);
+            }
+            else {
+            // We only have one object
+            redisClient.set(stop, JSON.stringify(busesArray));
+                res.json(busesArray);
+            }
         }
         else {
             // Check DB to see if we have a recent record
@@ -110,7 +126,7 @@ app.post('/rest/stop', function (req, res) {
 app.post('/rest/getPlaces', function (req, res) {
     var reqBody = req.body;
     var gAPIKey = 'key=AIzaSyB5pvxDYulLut0SLlHUep33ufjJ7OxUQ5M';
-    
+
     // Define base URL and addition appended strings
     var baseURL = 'https://maps.googleapis.com/maps/api/place/nearbysearch/json?';
     var location = 'location=' + reqBody.latitude + ',' + reqBody.longitude + '&';
