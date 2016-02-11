@@ -39,7 +39,12 @@ function filterFirstTenStops(stopArray) {
 
     var i = 0;
     for (i; i < 10; i++) {
-        responseArray[i] = stopArray[i];
+        if (i > stopArray.length) {
+            return responseArray;
+        }
+        else {
+            responseArray[i] = stopArray[i];
+        }
     }
 
     return responseArray;
@@ -71,12 +76,27 @@ app.post('/rest/stop', function (req, res) {
         var options = {
             object: true    // converts response to JS object
         };
-        if (!error && response.statusCode == 200) {
+	if (!error && response.statusCode == 200) {
             var busesObject = xml2json.toJson(body, options);
             var busesArray = busesObject.stop.pre;  // if NJT changes their xml format, this will break
-            var filteredArray = filterFirstTenStops(busesArray);
-            redisClient.set(stop, JSON.stringify(filteredArray));   // put the most recent response in the DB incase we can't reach NJT
-            res.json(filteredArray);
+	   var noPrediction = busesObject.stop.noPredictionMessage;
+	   if (noPrediction) {
+		// We have no current predictions
+		redisClient.set(stop, "No arrival times");
+		res.json(noPrediction);
+		return;
+	   }
+
+	   if (busesArray instanceof Array) {
+	    	var filteredArray = filterFirstTenStops(busesArray);
+            	redisClient.set(stop, JSON.stringify(filteredArray));   // put the most recent response in the DB incase we can't reach NJT
+	        res.json(filteredArray);
+            }
+	    else {
+		// We only have one object
+		redisClient.set(stop, JSON.stringify(busesArray));
+	    	res.json(busesArray);
+	    }
         }
         else {
             // Check DB to see if we have a recent record
