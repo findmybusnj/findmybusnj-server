@@ -76,7 +76,7 @@ app.post('/rest/stop', function (req, res) {
         var options = {
             object: true    // converts response to JS object
         };
-        if (!error && response.statusCode == 200) {
+    if (!error && response.statusCode == 200) {
             var busesObject = xml2json.toJson(body, options);
             var busesArray = busesObject.stop.pre;  // if NJT changes their xml format, this will break
             var noPrediction = busesObject.stop.noPredictionMessage;
