@@ -28,6 +28,24 @@ var ssl = {
 http.createServer(app).listen(process.env.PORT || 8000);
 https.createServer(ssl, app).listen(process.env.PORT || 8443);
 
+/**
+ * Gets the base url for the requests string
+ * @param  String   endpoint String that decides the url to be returned
+ * @return String            A string that is the url endpoint to hit
+ */
+function returnBaseURL(endpoint) {
+    switch endpoint {
+        case "stop":
+            return 'http://mybusnow.njtransit.com/bustime/eta/getStopPredictionsETA.jsp?route=all&stop=';
+        case "gAPI": {
+            return 'https://maps.googleapis.com/maps/api/place/nearbysearch/json?';
+        }
+        default: {
+            return '';
+        }
+    }
+};
+
 // Helper functions
 /**
  * Sort the stops based on next 10 buses
@@ -50,6 +68,26 @@ function filterFirstTenStops(stopArray) {
     return responseArray;
 };
 
+/**
+ * Returns the first 10 bus numbers matching the routeNumber passed in
+ * @param  Array    stopArray   Array that contains current stops
+ * @param  String   routeNumber String represenation of the route number
+ * @return Array                Array containing all the filtered route numbers
+ */
+function filterFirstTenStopsForBus(stopArray, routenumber) {
+    var responseArray = [];
+
+    var i = 0;
+    for (i; i < 10; i++) {
+        if (i > stopArray.length) {
+            return responseArray
+        }
+        else {
+
+        }
+    }
+};
+
 // Routes and endpoints
 /**
  * Create a function that returns the top ten pieces of data for a given
@@ -70,13 +108,15 @@ function filterFirstTenStops(stopArray) {
 app.post('/rest/stop', function (req, res) {
     // put the stop in json form
     var stop = req.body.stop;
-    var baseURL = "http://mybusnow.njtransit.com/bustime/eta/getStopPredictionsETA.jsp?route=all&stop="
+    var baseURL = returnBaseURL("stop");
     var requestURL = baseURL + stop;
+
     request({url: requestURL}, function(error, response, body) {
         var options = {
             object: true    // converts response to JS object
         };
-    if (!error && response.statusCode == 200) {
+
+        if (!error && response.statusCode == 200) {
             var busesObject = xml2json.toJson(body, options);
             var busesArray = busesObject.stop.pre;  // if NJT changes their xml format, this will break
             var noPrediction = busesObject.stop.noPredictionMessage;
@@ -94,9 +134,9 @@ app.post('/rest/stop', function (req, res) {
                 res.json(filteredArray);
             }
             else {
-            // We only have one object
-            redisClient.set(stop, JSON.stringify(busesArray));
-                res.json(busesArray);
+                // We only have one object
+                redisClient.set(stop, JSON.stringify(busesArray));
+                    res.json(busesArray);
             }
         }
         else {
@@ -118,6 +158,19 @@ app.post('/rest/stop', function (req, res) {
 });
 
 /**
+ * Gets the next stops that contain the bus being requested
+ * @param  form-data req    request data being sent to the endpoint
+ * @param  json      res    result being handed back to the user
+ * @return JSON      res    result items in json form sent back to the user
+ */
+app.post('/rest/stopFilteredByRoute', function (req, res) {
+    var stop = req.body.stop;
+    var route = req.body.bus;
+    var baseURL = returnBaseURL("stop");
+    var requestURL = baseURL + stop;
+});
+
+/**
  * Gets the nearby stops from google maps api
  * @param  form-data req      request data to be sent to google
  * @param  json      res      result being handed back to the user
@@ -128,7 +181,7 @@ app.post('/rest/getPlaces', function (req, res) {
     var gAPIKey = 'key=AIzaSyB5pvxDYulLut0SLlHUep33ufjJ7OxUQ5M';
 
     // Define base URL and addition appended strings
-    var baseURL = 'https://maps.googleapis.com/maps/api/place/nearbysearch/json?';
+    var baseURL = returnBaseURL("gAPI");
     var location = 'location=' + reqBody.latitude + ',' + reqBody.longitude + '&';
     var radius = 'radius=' + reqBody.radius + '&';
     var types = 'types=' + reqBody.types + '&';
