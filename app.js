@@ -74,18 +74,22 @@ function filterFirstTenStops(stopArray) {
  * @param  String   routeNumber String represenation of the route number
  * @return Array                Array containing all the filtered route numbers
  */
-function filterFirstTenStopsForBus(stopArray, routenumber) {
+function filterFirstTenStopsForRoute(stopArray, routeNumber) {
     var responseArray = [];
 
     var i = 0;
-    for (i; i < 10; i++) {
-        if (i > stopArray.length) {
-            return responseArray
+    for (i; i < stopArray.length; i++) {
+        // check to see that the routeNumbers match before adding
+        if (stopArray[i].rn == routeNumber) {
+            responseArray[i] = stopArray[i];
         }
-        else {
-
+        // Return once we get to 10 in case we have more than 10
+        if (responseArray.length == 10) {
+            return responseArray;
         }
     }
+
+    return responseArray
 };
 
 // Routes and endpoints
@@ -107,6 +111,7 @@ function filterFirstTenStopsForBus(stopArray, routenumber) {
  */
 app.post('/rest/stop', function (req, res) {
     // put the stop in json form
+    // NOTE: The stop double as the key
     var stop = req.body.stop;
     var baseURL = returnBaseURL("stop");
     var requestURL = baseURL + stop;
@@ -136,7 +141,7 @@ app.post('/rest/stop', function (req, res) {
             else {
                 // We only have one object
                 redisClient.set(stop, JSON.stringify(busesArray));
-                    res.json(busesArray);
+                res.json(busesArray);
             }
         }
         else {
@@ -163,11 +168,58 @@ app.post('/rest/stop', function (req, res) {
  * @param  json      res    result being handed back to the user
  * @return JSON      res    result items in json form sent back to the user
  */
-app.post('/rest/stopFilteredByRoute', function (req, res) {
+app.post('/rest/stop/byRoute', function (req, res) {
     var stop = req.body.stop;
     var route = req.body.bus;
     var baseURL = returnBaseURL("stop");
     var requestURL = baseURL + stop;
+    // NOTE: Key consists of the stop and the route as one number, which fairly unique.
+    var key = stop + route;
+
+    request({url: requestURL}, function(error, response, body) {
+        var options = {
+            object: true    // converts response to JS object
+        };
+
+        if (!error && response.statusCode == 200) {
+            var busesObject = xml2json.toJson(body, options);
+            var busesArray = busesObject.stop.pre;  // if NJT changes their xml format, this will break
+            var noPrediction = busesObject.stop.noPredictionMessage;
+        
+            if (noPrediction) {
+                // We have no current predictions
+                redisClient.set(key, "No arrival times");
+                res.json(noPrediction);
+                return;
+            }
+
+            if (busesArray instanceof Array) {
+                var filteredArray = filterFirstTenStopsForRoute(busesArray, route);
+                redisClient.set(key, JSON.stringify(filteredArray));   // put the most recent response in the DB incase we can't reach NJT
+                res.json(filteredArray);
+            }
+            else {
+                // We only have one object
+                redisClient.set(key, JSON.stringify(busesArray));
+                res.json(busesArray);
+            }
+        }
+        else {
+            // Check DB to see if we have a recent record
+            redisClient.exists(key, function(err, reply) {
+                // Return if we do
+                if (reply) {
+                    redisClient.get(key, function(err, reply){
+                        res.json(JSON.parse(reply));
+                    });
+                }
+                // Give no prediction if we don't
+                else {
+                    res.json("No Current Predictions");
+                }
+            });
+        }
+    });
 });
 
 /**
