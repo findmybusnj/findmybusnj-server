@@ -28,13 +28,14 @@ var ssl = {
 http.createServer(app).listen(process.env.PORT || 8000);
 https.createServer(ssl, app).listen(process.env.PORT || 8443);
 
+//--- Helper functions ---//
 /**
  * Gets the base url for the requests string
  * @param  String   endpoint String that decides the url to be returned
  * @return String            A string that is the url endpoint to hit
  */
 function returnBaseURL(endpoint) {
-    switch endpoint {
+    switch (endpoint) {
         case "stop":
             return 'http://mybusnow.njtransit.com/bustime/eta/getStopPredictionsETA.jsp?route=all&stop=';
         case "gAPI": {
@@ -46,7 +47,6 @@ function returnBaseURL(endpoint) {
     }
 };
 
-// Helper functions
 /**
  * Sort the stops based on next 10 buses
  *
@@ -81,7 +81,7 @@ function filterFirstTenStopsForRoute(stopArray, routeNumber) {
     for (i; i < stopArray.length; i++) {
         // check to see that the routeNumbers match before adding
         if (stopArray[i].rn == routeNumber) {
-            responseArray[i] = stopArray[i];
+            responseArray.push(stopArray[i]);
         }
         // Return once we get to 10 in case we have more than 10
         if (responseArray.length == 10) {
@@ -92,7 +92,7 @@ function filterFirstTenStopsForRoute(stopArray, routeNumber) {
     return responseArray
 };
 
-// Routes and endpoints
+//--- Routes and endpoints ---//
 /**
  * Create a function that returns the top ten pieces of data for a given
  * stop key
@@ -170,7 +170,7 @@ app.post('/rest/stop', function (req, res) {
  */
 app.post('/rest/stop/byRoute', function (req, res) {
     var stop = req.body.stop;
-    var route = req.body.bus;
+    var route = req.body.route;
     var baseURL = returnBaseURL("stop");
     var requestURL = baseURL + stop;
     // NOTE: Key consists of the stop and the route as one number, which fairly unique.
