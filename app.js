@@ -58,7 +58,7 @@ function filterFirstTenStops(stopArray) {
     var i = 0;
     for (i; i < stopArray.length; i++) {
         // only want first 10 responses
-        if (i == 11) {
+        if (i == 10) {
             return responseArray;
         }
         else {
