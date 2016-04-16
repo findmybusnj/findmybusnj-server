@@ -81,7 +81,7 @@ function filterFirstTenStopsForRoute(stopArray, routeNumber) {
     var i = 0;
     for (i; i < stopArray.length; i++) {
         // check to see that the routeNumbers match before adding
-        if (stopArray[i].rn == routeNumber) {
+        if (stopArray[i].rn === routeNumber) {
             responseArray.push(stopArray[i]);
         }
         // Return once we get to 10 in case we have more than 10
