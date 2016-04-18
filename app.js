@@ -58,11 +58,11 @@ function filterFirstTenStops(stopArray) {
     var i = 0;
     for (i; i < stopArray.length; i++) {
         // only want first 10 responses
-        if (i == 11) {
+        if (i === 11) {
             return responseArray;
         }
         else {
-            responseArray[i] = stopArray[i];
+            responseArray.push(stopArray[i]);
         }
     }
 
@@ -81,11 +81,11 @@ function filterFirstTenStopsForRoute(stopArray, routeNumber) {
     var i = 0;
     for (i; i < stopArray.length; i++) {
         // check to see that the routeNumbers match before adding
-        if (stopArray[i].rn == routeNumber) {
+        if (stopArray[i].rn === routeNumber) {
             responseArray.push(stopArray[i]);
         }
         // Return once we get to 10 in case we have more than 10
-        if (responseArray.length == 10) {
+        if (responseArray.length === 10) {
             return responseArray;
         }
     }
@@ -122,7 +122,7 @@ app.post('/rest/stop', function (req, res) {
             object: true    // converts response to JS object
         };
 
-        if (!error && response.statusCode == 200) {
+        if (!error && response.statusCode === 200) {
             var busesObject = xml2json.toJson(body, options);
             var busesArray = busesObject.stop.pre;  // if NJT changes their xml format, this will break
             var noPrediction = busesObject.stop.noPredictionMessage;
@@ -141,8 +141,10 @@ app.post('/rest/stop', function (req, res) {
             }
             else {
                 // We only have one object
-                redisClient.set(stop, JSON.stringify(busesArray));
-                res.json(busesArray);
+		var singleObject = [];
+		singleObject.push(busesArray);
+                redisClient.set(stop, JSON.stringify(singleObject));
+                res.json(singleObject);
             }
         }
         else {
@@ -182,7 +184,7 @@ app.post('/rest/stop/byRoute', function (req, res) {
             object: true    // converts response to JS object
         };
 
-        if (!error && response.statusCode == 200) {
+        if (!error && response.statusCode === 200) {
             var busesObject = xml2json.toJson(body, options);
             var busesArray = busesObject.stop.pre;  // if NJT changes their xml format, this will break
             var noPrediction = busesObject.stop.noPredictionMessage;
@@ -243,7 +245,7 @@ app.post('/rest/getPlaces', function (req, res) {
     console.log(placesUrl);
     request({url: placesUrl, json: true},
     function (error, response, body) {
-        if (!error && response.statusCode == 200) {
+        if (!error && response.statusCode === 200) {
             res.json(body);
         }
     });
