@@ -203,8 +203,10 @@ app.post('/rest/stop/byRoute', function (req, res) {
             }
             else {
                 // We only have one object
-                redisClient.set(key, JSON.stringify(busesArray));
-                res.json(busesArray);
+		var singleObject = [];
+		singleObject.push(busesArray);
+                redisClient.set(stop, JSON.stringify(singleObject));
+                res.json(singleObject);
             }
         }
         else {
