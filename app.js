@@ -10,6 +10,9 @@ var xml2json = require('xml2json');
 var redis = require('redis');
 var redisClient = redis.createClient(6379);
 
+// keys
+var gAPIKey = require('./keys.js');
+
 // server
 var app = express();
 
@@ -93,6 +96,28 @@ function filterFirstTenStopsForRoute(stopArray, routeNumber) {
     return responseArray
 };
 
+/**
+ * Gets the data from Redis if the result exists
+ * @param  error    err   The error if there exists one
+ * @param  json     reply The json reply from the server
+ * @return json           The result from the Redis database, or "No Current Prediction" if none exists
+ */
+function resultExists(err, reply) {
+    // Check DB to see if we have a recent record
+    redisClient.exists(stop, function(err, reply) {
+        // Return if we do
+        if (reply) {
+            redisClient.get(stop, function(err, reply){
+                res.json(JSON.parse(reply));
+            });
+        }
+        // Give no prediction if we don't
+        else {
+            res.json("No Current Predictions");
+        }
+    });
+}
+
 //--- Routes and endpoints ---//
 /**
  * Create a function that returns the top ten pieces of data for a given
@@ -146,19 +171,7 @@ app.post('/rest/stop', function (req, res) {
             }
         }
         else {
-            // Check DB to see if we have a recent record
-            redisClient.exists(stop, function(err, reply) {
-                // Return if we do
-                if (reply) {
-                    redisClient.get(stop, function(err, reply){
-                        res.json(JSON.parse(reply));
-                    });
-                }
-                // Give no prediction if we don't
-                else {
-                    res.json("No Current Predictions");
-                }
-            });
+            resultExists(err, reply);
         }
     });
 });
@@ -206,19 +219,7 @@ app.post('/rest/stop/byRoute', function (req, res) {
             }
         }
         else {
-            // Check DB to see if we have a recent record
-            redisClient.exists(key, function(err, reply) {
-                // Return if we do
-                if (reply) {
-                    redisClient.get(key, function(err, reply){
-                        res.json(JSON.parse(reply));
-                    });
-                }
-                // Give no prediction if we don't
-                else {
-                    res.json("No Current Predictions");
-                }
-            });
+            resultExists(err, reply);
         }
     });
 });
@@ -231,7 +232,6 @@ app.post('/rest/stop/byRoute', function (req, res) {
  */
 app.post('/rest/getPlaces', function (req, res) {
     var reqBody = req.body;
-    var gAPIKey = 'key=AIzaSyB5pvxDYulLut0SLlHUep33ufjJ7OxUQ5M';
 
     // Define base URL and addition appended strings
     var baseURL = returnBaseURL("gAPI");
