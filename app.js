@@ -186,9 +186,31 @@ app.post('/rest/stop', function (req, res) {
 
 app.get('/rest/agencies', function(req, res) {
   gtfs.agencies((err, agencies) => {
-    console.log(agencies);
+    res.json(agencies);
+    return;
   });
 });
+
+app.get('/rest/routes', function(req, res) {
+  gtfs.getRoutesByAgency('nj', (err, routes) => {
+    res.json(routes);
+    return;
+  });
+});
+
+app.post('/rest/routesById', function(req, res) {
+  gtfs.getRoutesById('nj', req.body.route, (err, routes) => {
+    res.json(routes);
+    return;
+  });
+})
+
+app.post('/rest/routesForStop', function(req, res) {
+  gtfs.getRoutesByStop('nj', req.body.stop_id, (err, routes) => {
+    res.json(routes);
+    return;
+  });
+})
 
 /**
  * Gets the next stops that contain the bus being requested
