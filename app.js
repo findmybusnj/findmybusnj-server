@@ -198,6 +198,13 @@ app.get('/rest/routes', function(req, res) {
   });
 });
 
+app.get('/rest/stops', function(req, res) {
+  gtfs.getStops('nj', (err, stops) => {
+    res.json(stops);
+    return;
+  });
+})
+
 app.post('/rest/routesById', function(req, res) {
   gtfs.getRoutesById('nj', req.body.route, (err, routes) => {
     res.json(routes);
