@@ -1,0 +1,12 @@
+{
+  "mongoUrl": "mongodb://localhost:27017/gtfs",
+  "agencies": [
+    {
+      "agency_key": "nj",
+      "url": "http://transitfeeds.com/p/nj-transit/409/latest/download",
+      "exclude": [
+        "shapes"
+      ]
+    }
+  ]
+}

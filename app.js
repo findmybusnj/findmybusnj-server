@@ -8,10 +8,15 @@ var fs = require('fs');
 var bodyParser = require('body-parser');
 var xml2json = require('xml2json');
 var redis = require('redis');
-var redisClient = redis.createClient(6379);
+// var redisClient = redis.createClient(6379);
 
 // keys
-var gAPIKey = require('./keys.js');
+// var gAPIKey = require('./keys.js');
+
+const gtfs = require('gtfs');
+const mongoose = require('mongoose');
+mongoose.Promise = global.Promise;
+mongoose.connect('mongodb://localhost:27017/gtfs');
 
 // server
 var app = express();
@@ -22,14 +27,14 @@ app.use(staticServe('_domain', {'index': ['index.html', 'index.html']}));
 app.set('trust proxy', true);
 app.set('trust proxy', 'loopback');
 
-var ssl = {
-    key: fs.readFileSync('/etc/letsencrypt/live/findmybusnj.com/privkey.pem'),
-    cert: fs.readFileSync('/etc/letsencrypt/live/findmybusnj.com/fullchain.pem'),
-    ca: fs.readFileSync('/etc/letsencrypt/live/findmybusnj.com/chain.pem')
-}
+// var ssl = {
+//     key: fs.readFileSync('/etc/letsencrypt/live/findmybusnj.com/privkey.pem'),
+//     cert: fs.readFileSync('/etc/letsencrypt/live/findmybusnj.com/fullchain.pem'),
+//     ca: fs.readFileSync('/etc/letsencrypt/live/findmybusnj.com/chain.pem')
+// }
 
 http.createServer(app).listen(process.env.PORT || 8000);
-https.createServer(ssl, app).listen(process.env.PORT || 8443);
+// https.createServer(ssl, app).listen(process.env.PORT || 8443);
 
 //--- Helper functions ---//
 /**
@@ -151,7 +156,7 @@ app.post('/rest/stop', function (req, res) {
             var busesObject = xml2json.toJson(body, options);
             var busesArray = busesObject.stop.pre;  // if NJT changes their xml format, this will break
             var noPrediction = busesObject.stop.noPredictionMessage;
-        
+
             if (noPrediction) {
                 // We have no current predictions
                 redisClient.set(stop, "No arrival times");
@@ -178,6 +183,13 @@ app.post('/rest/stop', function (req, res) {
     });
 });
 
+
+app.get('/rest/agencies', function(req, res) {
+  gtfs.agencies((err, agencies) => {
+    console.log(agencies);
+  });
+});
+
 /**
  * Gets the next stops that contain the bus being requested
  * @param  form-data req    request data being sent to the endpoint
@@ -201,7 +213,7 @@ app.post('/rest/stop/byRoute', function (req, res) {
             var busesObject = xml2json.toJson(body, options);
             var busesArray = busesObject.stop.pre;  // if NJT changes their xml format, this will break
             var noPrediction = busesObject.stop.noPredictionMessage;
-        
+
             if (noPrediction) {
                 // We have no current predictions
                 redisClient.set(key, "No arrival times");
