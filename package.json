@@ -1,0 +1,31 @@
+{
+  "name": "findmybusnj-server",
+  "version": "1.0.0",
+  "description": "Server for findmybusnj",
+  "main": "app.js",
+  "dependencies": {
+    "body-parser": "^1.17.1",
+    "express": "^4.15.2",
+    "fs": "0.0.1-security",
+    "http": "0.0.0",
+    "https": "^1.0.0",
+    "redis": "^2.6.5",
+    "request": "^2.80.0",
+    "serve-static": "^1.12.1",
+    "xml2json": "^0.11.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/findmybusnj/findmybusnj-server.git"
+  },
+  "author": "David Aghassi",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/findmybusnj/findmybusnj-server/issues"
+  },
+  "homepage": "https://github.com/findmybusnj/findmybusnj-server#readme"
+}
