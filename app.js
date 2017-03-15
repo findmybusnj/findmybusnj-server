@@ -183,41 +183,18 @@ app.post('/rest/stop', function (req, res) {
     });
 });
 
-
-app.get('/rest/agencies', function(req, res) {
-  gtfs.agencies((err, agencies) => {
-    res.json(agencies);
-    return;
-  });
-});
-
-app.get('/rest/routes', function(req, res) {
-  gtfs.getRoutesByAgency('nj', (err, routes) => {
-    res.json(routes);
-    return;
-  });
-});
-
-app.get('/rest/stops', function(req, res) {
-  gtfs.getStops('nj', (err, stops) => {
+/**
+ * Gets all stops for `nj` transit bus lines that match the stop_code (or array
+of stop_codes )
+ * @param form-data req     request data to be sent to the mongoose db for query
+ * @param json      res     result being returned from db query
+ **/
+app.post('/rest/stops/byCode', function(req, res) {
+  gtfs.getStopsByStopCode('nj', req.body.code, (err, stops) => {
     res.json(stops);
     return;
   });
-})
-
-app.post('/rest/routesById', function(req, res) {
-  gtfs.getRoutesById('nj', req.body.route, (err, routes) => {
-    res.json(routes);
-    return;
-  });
-})
-
-app.post('/rest/routesForStop', function(req, res) {
-  gtfs.getRoutesByStop('nj', req.body.stop_id, (err, routes) => {
-    res.json(routes);
-    return;
-  });
-})
+});
 
 /**
  * Gets the next stops that contain the bus being requested
@@ -267,6 +244,43 @@ app.post('/rest/stop/byRoute', function (req, res) {
             resultExists(err, reply);
         }
     });
+});
+
+/**
+ * Gets all routes for `nj` transit bus lines
+ * @param form-data req     request data to be sent to the mongoose db for query
+ * @param json      res     result being returned from db query
+ **/
+app.get('/rest/routes', function(req, res) {
+  gtfs.getRoutesByAgency('nj', (err, routes) => {
+    res.json(routes);
+    return;
+  });
+});
+
+/**
+ * Gets all routes for `nj` transit bus lines given a specificy route ID
+ * @param form-data req     request data to be sent to the mongoose db for query
+ * @param json      res     result being returned from db query
+ **/
+app.post('/rest/routes/byId', function(req, res) {
+  gtfs.getRoutesById('nj', req.body.route, (err, routes) => {
+    res.json(routes);
+    return;
+  });
+});
+
+/**
+ * Gets all routes for `nj` transit bus lines given a specific stop_id (may be
+different than stop_code)
+ * @param form-data req     request data to be sent to the mongoose db for query
+ * @param json      res     result being returned from db query
+ **/
+app.post('/rest/routes/forStop', function(req, res) {
+  gtfs.getRoutesByStop('nj', req.body.stop_id, (err, routes) => {
+    res.json(routes);
+    return;
+  });
 });
 
 /**
