@@ -1,22 +1,22 @@
 // imports
-var express = require('express');
-var request = require('request');
-var http = require('http');
-var https = require('https');
-var staticServe = require('serve-static');
-var fs = require('fs');
-var bodyParser = require('body-parser');
-var xml2json = require('xml2json');
-var redis = require('redis');
-// var redisClient = redis.createClient(6379);
-
-// keys
-// var gAPIKey = require('./keys.js');
-
+const express = require('express');
+const request = require('request');
+const http = require('http');
+const https = require('https');
+const staticServe = require('serve-static');
+const fs = require('fs');
+const bodyParser = require('body-parser');
+const xml2json = require('xml2json');
+const redis = require('redis');
+const redisClient = redis.createClient(6379);
 const gtfs = require('gtfs');
 const mongoose = require('mongoose');
 mongoose.Promise = global.Promise;
 mongoose.connect('mongodb://localhost:27017/gtfs');
+
+// keys
+var gAPIKey = require('./keys.js');
+
 
 // server
 var app = express();
