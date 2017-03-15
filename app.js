@@ -27,14 +27,14 @@ app.use(staticServe('_domain', {'index': ['index.html', 'index.html']}));
 app.set('trust proxy', true);
 app.set('trust proxy', 'loopback');
 
-// var ssl = {
-//     key: fs.readFileSync('/etc/letsencrypt/live/findmybusnj.com/privkey.pem'),
-//     cert: fs.readFileSync('/etc/letsencrypt/live/findmybusnj.com/fullchain.pem'),
-//     ca: fs.readFileSync('/etc/letsencrypt/live/findmybusnj.com/chain.pem')
-// }
+var ssl = {
+    key: fs.readFileSync('/etc/letsencrypt/live/findmybusnj.com/privkey.pem'),
+    cert: fs.readFileSync('/etc/letsencrypt/live/findmybusnj.com/fullchain.pem'),
+    ca: fs.readFileSync('/etc/letsencrypt/live/findmybusnj.com/chain.pem')
+}
 
 http.createServer(app).listen(process.env.PORT || 8000);
-// https.createServer(ssl, app).listen(process.env.PORT || 8443);
+https.createServer(ssl, app).listen(process.env.PORT || 8443);
 
 //--- Helper functions ---//
 /**
