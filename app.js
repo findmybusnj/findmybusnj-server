@@ -14,10 +14,6 @@ const mongoose = require('mongoose');
 mongoose.Promise = global.Promise;
 mongoose.connect('mongodb://localhost:27017/gtfs');
 
-// keys
-var gAPIKey = require('./keys.js');
-
-
 // server
 var app = express();
 
@@ -46,9 +42,6 @@ function returnBaseURL(endpoint) {
     switch (endpoint) {
         case "stop":
             return 'http://mybusnow.njtransit.com/bustime/eta/getStopPredictionsETA.jsp?route=all&stop=';
-        case "gAPI": {
-            return 'https://maps.googleapis.com/maps/api/place/nearbysearch/json?';
-        }
         default: {
             return '';
         }
@@ -171,8 +164,8 @@ app.post('/rest/stop', function (req, res) {
             }
             else {
                 // We only have one object
-		var singleObject = [];
-		singleObject.push(busesArray);
+            		var singleObject = [];
+            		singleObject.push(busesArray);
                 redisClient.set(stop, JSON.stringify(singleObject));
                 res.json(singleObject);
             }
@@ -234,8 +227,8 @@ app.post('/rest/stop/byRoute', function (req, res) {
             }
             else {
                 // We only have one object
-		var singleObject = [];
-		singleObject.push(busesArray);
+            		var singleObject = [];
+            		singleObject.push(busesArray);
                 redisClient.set(stop, JSON.stringify(singleObject));
                 res.json(singleObject);
             }
@@ -290,20 +283,13 @@ app.post('/rest/routes/forStop', function(req, res) {
  * @return JSON      res      result item is resturned to the user
  */
 app.post('/rest/getPlaces', function (req, res) {
-    var reqBody = req.body;
+    const reqBody = req.body;
+    const lat = reqBody.latitude;
+    const lon = reqBody.longitude;
+    const radius = reqBody.radius;
 
-    // Define base URL and addition appended strings
-    var baseURL = returnBaseURL("gAPI");
-    var location = 'location=' + reqBody.latitude + ',' + reqBody.longitude + '&';
-    var radius = 'radius=' + reqBody.radius + '&';
-    var types = 'types=' + reqBody.types + '&';
-
-    var placesUrl = baseURL + location + radius + types + gAPIKey;
-    console.log(placesUrl);
-    request({url: placesUrl, json: true},
-    function (error, response, body) {
-        if (!error && response.statusCode === 200) {
-            res.json(body);
-        }
+    gtfs.getStopsByDistance(lat, lon, radius, (err, stops) => {
+        res.json(stops);
+        return;
     });
 });
