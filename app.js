@@ -1,28 +1,29 @@
 // imports
-var express = require('express');
-var request = require('request');
-var http = require('http');
-var https = require('https');
-var staticServe = require('serve-static');
-var fs = require('fs');
-var bodyParser = require('body-parser');
-var xml2json = require('xml2json');
-var redis = require('redis');
-var redisClient = redis.createClient(6379);
+const express = require('express');
+const request = require('request');
+const http = require('http');
+const https = require('https');
+const staticServe = require('serve-static');
+const fs = require('fs');
+const bodyParser = require('body-parser');
+const xml2json = require('xml2json');
+const redis = require('redis');
+
+const redisClient = redis.createClient(6379);
 
 // keys
-var gAPIKey = require('./keys.js');
+const gAPIKey = require('./keys.js');
 
 // server
-var app = express();
+const app = express();
 
 app.use(bodyParser.json()); // used for parsing application/json
 app.use(bodyParser.urlencoded({ extended: true }));     // for parsing application/x-www-form-unlencoded
-app.use(staticServe('_domain', {'index': ['index.html', 'index.html']}));
+app.use(staticServe('_domain', { 'index': ['index.html', 'index.html'] }));
 app.set('trust proxy', true);
 app.set('trust proxy', 'loopback');
 
-var ssl = {
+const ssl = {
     key: fs.readFileSync('/etc/letsencrypt/live/findmybusnj.com/privkey.pem'),
     cert: fs.readFileSync('/etc/letsencrypt/live/findmybusnj.com/fullchain.pem'),
     ca: fs.readFileSync('/etc/letsencrypt/live/findmybusnj.com/chain.pem')
@@ -31,7 +32,7 @@ var ssl = {
 http.createServer(app).listen(process.env.PORT || 8000);
 https.createServer(ssl, app).listen(process.env.PORT || 8443);
 
-//--- Helper functions ---//
+// Helper functions //
 /**
  * Gets the base url for the requests string
  * @param  String   endpoint String that decides the url to be returned
@@ -56,17 +57,15 @@ function returnBaseURL(endpoint) {
  * @param stopArray Contains all the stops to be filtered
  */
 function filterFirstTenStops(stopArray) {
-    var responseArray = [];
+    const responseArray = [];
 
-    var i = 0;
-    for (i; i < stopArray.length; i++) {
+    let i = 0;
+    for (i; i < stopArray.length; i += 1) {
         // only want first 10 responses
         if (i === 11) {
             return responseArray;
         }
-        else {
-            responseArray.push(stopArray[i]);
-        }
+        responseArray.push(stopArray[i]);
     }
 
     return responseArray;
@@ -79,10 +78,10 @@ function filterFirstTenStops(stopArray) {
  * @return Array                Array containing all the filtered route numbers
  */
 function filterFirstTenStopsForRoute(stopArray, routeNumber) {
-    var responseArray = [];
+    const responseArray = [];
 
-    var i = 0;
-    for (i; i < stopArray.length; i++) {
+    let i = 0;
+    for (i; i < stopArray.length; i += 1) {
         // check to see that the routeNumbers match before adding
         if (stopArray[i].rn === routeNumber) {
             responseArray.push(stopArray[i]);
@@ -98,16 +97,16 @@ function filterFirstTenStopsForRoute(stopArray, routeNumber) {
 
 /**
  * Gets the data from Redis if the result exists
- * @param  error    err   The error if there exists one
- * @param  json     reply The json reply from the server
+ * @param  {Error}    err   The error if there exists one
+ * @param  {JSON}     reply The json reply from the server
  * @return json           The result from the Redis database, or "No Current Prediction" if none exists
  */
 function resultExists(err, reply) {
     // Check DB to see if we have a recent record
-    redisClient.exists(stop, function(err, reply) {
+    redisClient.exists(stop, (err, reply) => {
         // Return if we do
         if (reply) {
-            redisClient.get(stop, function(err, reply){
+            redisClient.get(stop, (err, reply) => {
                 res.json(JSON.parse(reply));
             });
         }
@@ -118,7 +117,7 @@ function resultExists(err, reply) {
     });
 }
 
-//--- Routes and endpoints ---//
+// Routes and endpoints //
 /**
  * Create a function that returns the top ten pieces of data for a given
  * stop key
@@ -135,23 +134,25 @@ function resultExists(err, reply) {
         "zone": {}
     }
  */
-app.post('/rest/stop', function (req, res) {
-    // put the stop in json form
-    // NOTE: The stop double as the key
-    var stop = req.body.stop;
-    var baseURL = returnBaseURL("stop");
-    var requestURL = baseURL + stop;
+app.post('/rest/stop', (req, res) => {
+    /**
+     * put the stop in json form
+     * NOTE: The stop double as the key
+     */
+    const stop = req.body.stop;
+    const baseURL = returnBaseURL("stop");
+    const requestURL = baseURL + stop;
 
-    request({url: requestURL}, function(error, response, body) {
-        var options = {
+    request({ url: requestURL }, (error, response, body) => {
+        const options = {
             object: true    // converts response to JS object
         };
 
         if (!error && response.statusCode === 200) {
-            var busesObject = xml2json.toJson(body, options);
-            var busesArray = busesObject.stop.pre;  // if NJT changes their xml format, this will break
-            var noPrediction = busesObject.stop.noPredictionMessage;
-        
+            const busesObject = xml2json.toJson(body, options);
+            const busesArray = busesObject.stop.pre;  // if NJT changes their xml format, this will break
+            const noPrediction = busesObject.stop.noPredictionMessage;
+
             if (noPrediction) {
                 // We have no current predictions
                 redisClient.set(stop, "No arrival times");
@@ -160,14 +161,14 @@ app.post('/rest/stop', function (req, res) {
             }
 
             if (busesArray instanceof Array) {
-                var filteredArray = filterFirstTenStops(busesArray);
+                const filteredArray = filterFirstTenStops(busesArray);
                 redisClient.set(stop, JSON.stringify(filteredArray));   // put the most recent response in the DB incase we can't reach NJT
                 res.json(filteredArray);
             }
             else {
                 // We only have one object
-		var singleObject = [];
-		singleObject.push(busesArray);
+                const singleObject = [];
+                singleObject.push(busesArray);
                 redisClient.set(stop, JSON.stringify(singleObject));
                 res.json(singleObject);
             }
@@ -184,24 +185,24 @@ app.post('/rest/stop', function (req, res) {
  * @param  json      res    result being handed back to the user
  * @return JSON      res    result items in json form sent back to the user
  */
-app.post('/rest/stop/byRoute', function (req, res) {
-    var stop = req.body.stop;
-    var route = req.body.route;
-    var baseURL = returnBaseURL("stop");
-    var requestURL = baseURL + stop;
+app.post('/rest/stop/byRoute', (req, res) => {
+    const stop = req.body.stop;
+    const route = req.body.route;
+    const baseURL = returnBaseURL("stop");
+    const requestURL = baseURL + stop;
     // NOTE: Key consists of the stop and the route as one number, which fairly unique.
-    var key = stop + route;
+    const key = stop + route;
 
-    request({url: requestURL}, function(error, response, body) {
-        var options = {
+    request({ url: requestURL }, (error, response, body) => {
+        const options = {
             object: true    // converts response to JS object
         };
 
         if (!error && response.statusCode === 200) {
-            var busesObject = xml2json.toJson(body, options);
-            var busesArray = busesObject.stop.pre;  // if NJT changes their xml format, this will break
-            var noPrediction = busesObject.stop.noPredictionMessage;
-        
+            const busesObject = xml2json.toJson(body, options);
+            const busesArray = busesObject.stop.pre;  // if NJT changes their xml format, this will break
+            const noPrediction = busesObject.stop.noPredictionMessage;
+
             if (noPrediction) {
                 // We have no current predictions
                 redisClient.set(key, "No arrival times");
@@ -210,14 +211,14 @@ app.post('/rest/stop/byRoute', function (req, res) {
             }
 
             if (busesArray instanceof Array) {
-                var filteredArray = filterFirstTenStopsForRoute(busesArray, route);
+                const filteredArray = filterFirstTenStopsForRoute(busesArray, route);
                 redisClient.set(key, JSON.stringify(filteredArray));   // put the most recent response in the DB incase we can't reach NJT
                 res.json(filteredArray);
             }
             else {
                 // We only have one object
-		var singleObject = [];
-		singleObject.push(busesArray);
+                const singleObject = [];
+                singleObject.push(busesArray);
                 redisClient.set(stop, JSON.stringify(singleObject));
                 res.json(singleObject);
             }
@@ -234,21 +235,21 @@ app.post('/rest/stop/byRoute', function (req, res) {
  * @param  json      res      result being handed back to the user
  * @return JSON      res      result item is resturned to the user
  */
-app.post('/rest/getPlaces', function (req, res) {
-    var reqBody = req.body;
+app.post('/rest/getPlaces', (req, res) => {
+    const reqBody = req.body;
 
     // Define base URL and addition appended strings
-    var baseURL = returnBaseURL("gAPI");
-    var location = 'location=' + reqBody.latitude + ',' + reqBody.longitude + '&';
-    var radius = 'radius=' + reqBody.radius + '&';
-    var types = 'types=' + reqBody.types + '&';
+    const baseURL = returnBaseURL("gAPI");
+    const location = `location=${  reqBody.latitude  },${  reqBody.longitude  }&`;
+    const radius = `radius=${  reqBody.radius  }&`;
+    const types = `types=${  reqBody.types  }&`;
 
-    var placesUrl = baseURL + location + radius + types + gAPIKey;
-    console.log(placesUrl);
-    request({url: placesUrl, json: true},
-    function (error, response, body) {
-        if (!error && response.statusCode === 200) {
-            res.json(body);
-        }
-    });
+    const placesUrl = baseURL + location + radius + types + gAPIKey;
+    // console.log(placesUrl);
+    request({ url: placesUrl, json: true },
+        (error, response, body) => {
+            if (!error && response.statusCode === 200) {
+                res.json(body);
+            }
+        });
 });
