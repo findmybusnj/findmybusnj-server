@@ -1,5 +1,6 @@
 {
   "name": "findmybusnj-server",
+  "private": true,
   "version": "1.0.0",
   "description": "Server for findmybusnj",
   "main": "app.js",
