@@ -10,7 +10,7 @@
     "http": "0.0.0",
     "https": "1.0.0",
     "redis": "2.8.0",
-    "request": "2.88.0",
+    "request": "2.88.2",
     "serve-static": "1.14.0",
     "xml2json": "0.11.2"
   },
