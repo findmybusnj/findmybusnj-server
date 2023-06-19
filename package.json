@@ -5,7 +5,7 @@
   "description": "Server for findmybusnj",
   "main": "app.js",
   "dependencies": {
-    "body-parser": "1.19.0",
+    "body-parser": "1.20.2",
     "express": "4.17.0",
     "http": "0.0.0",
     "https": "1.0.0",
